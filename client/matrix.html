@@ -78,8 +78,9 @@
   <!-- editable or not -->
       
       {{#if notWeight}}
-        
+        {{#if notNWeight}}
         {{> editableText collection="cells" field="data" saveOnFocusout=true}}
+        {{/if}}
       {{else}}
         {{> sliderCell}}
         <!--sliderCell: template file in matrix.html-->
@@ -140,5 +141,6 @@
     <div class="slider-container"> 
               <div class="sliderrr"></div>
     </div>
-    <span>{{dataPercent}}%</span>
+    <!-- <span>{{dataPercent}}%</span> -->
+    <span>{{data}}</span>
 </template>

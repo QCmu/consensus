@@ -53,6 +53,24 @@ var updateWeight = function(proID,userID){
 updateTotal: calculate total score, update row -1.
 **/
 var updateTotal = function(proID,userID){
+      
+      var weightArray = cellFindCol(1,proID,userID);
+      
+      var sum = 0;
+      weightArray.forEach(function(cell){
+        sum =sum + Number(cell.data);
+      });
+      var notWeight=[];
+      cellFindCol(2,proID,userID).forEach(function(cell){
+        
+        var val=cellFindOne(cell.row, 1,proID,userID).data/sum;
+        notWeight[cell.row-1]=val.toFixed(3);
+        Cells.update(cell._id,{$set: {data: val.toFixed(3) }});
+
+      });
+
+
+
       var totalArray = cellFindRow(-1,proID,userID);
 
       totalArray.forEach(function(cell){
@@ -65,7 +83,9 @@ var updateTotal = function(proID,userID){
           if (Number(cellInside.row)>= 1) {
 
             //sum += normalized weight * cell.data
-            sum =sum + Number(cellFindOne(cellInside.row,2,proID,userID).data ) * Number(cellInside.data) ;
+          //  sum =sum + Number(cellFindOne(cellInside.row,2,proID,userID).data ) * Number(cellInside.data) ;
+            sum =sum + notWeight[cellInside.row-1] * Number(cellInside.data) ;
+
           };
         });
         Cells.update(cell._id,{$set: {data: sum.toFixed(3)}});
@@ -117,8 +137,10 @@ Template.matrix.helpers({
     },
 
     cellFindRow: function(rowNo,userID,currentProjectt){
-      updateWeight(currentProjectt,userID);
-      updateTotal(currentProjectt,userID);
+    /* 150819 test*/
+
+    //  updateWeight(currentProjectt,userID);
+    //  updateTotal(currentProjectt,userID);
       updateCandidate(currentProjectt);
       updateFactor(currentProjectt);
 
@@ -145,7 +167,10 @@ Session.setDefault({showNotes: showCheckBox});
 
 Template.matBody.helpers({
     cellFindRow: function(rowNo, projectID,userID){
+         /* 150819 test*/
 
+   //   updateWeight(projectID,userID);
+      updateTotal(projectID,userID);
       return cellFindRow(rowNo,projectID,userID);
     },
     showNotes: function(row){
@@ -335,6 +360,13 @@ Template.cellshow.helpers({
       }
     },
     notWeight:function(){
+      if(this.column===1){
+        return false;
+      }else{
+        return true;
+      }
+    },
+    notNWeight:function(){
       if(this.column===2){
         return false;
       }else{
@@ -386,6 +418,80 @@ var updateSliders=function(id){
   })
 };
 
+var updateOtherWeight=function(id,value){
+
+  var thiscell = Cells.findOne({_id:id});
+  var weightCursor=Cells.find({
+    column:1,
+    projectID:thiscell.projectID,
+    userID:thiscell.userID,
+    isReport:false
+  });
+  var sum=0;
+  var count=weightCursor.count();
+  //console.log('@@@@,',count);
+  var tempArray=[];
+  
+  var slider=$( ".noUi-origin" );
+  weightCursor.forEach(function (wcell) {
+    
+    sum = sum+Number(wcell.data);
+  });
+  var delta=1-sum;
+  
+  weightCursor.forEach(function (wcell) {
+    
+    if(wcell.row!==thiscell.row){
+        
+        var temp=Number(wcell.data)+delta/(count-1);
+        
+        if(temp<0 || value ===1){
+          temp=0;
+        };
+        if (temp>1) {
+          temp=1;
+        };
+        //console.log(wcell.row,':',temp);        
+        //Cells.update(wcell._id,{$set: {data: Number(temp).toFixed(2)}});
+        //console.log("data,",wcell.data);
+        
+
+        tempArray[wcell.row-1] =Number(temp);
+        // slider.each(function(index){
+        //   if (index===wcell.row-1){
+        //     temPercent=(temp*100).toFixed(2);
+        //     $(this).css("left",temPercent.toString()+"%");
+        //   }
+        // })
+        
+    }else{
+      tempArray[wcell.row-1] =Number(value);
+    }
+    //console.log(tempArray);
+
+    
+    console.log(wcell.row,':',wcell.data); 
+  });
+    console.log(tempArray);
+      slider.each(function(index){
+          //if (index===wcell.row-1){
+            var temPercent=(tempArray[index]*100).toFixed(2);
+            $(this).css("left",temPercent.toString()+"%");
+          //}
+        })
+
+    weightCursor.forEach(function (wcell) {
+      var  tempp=(tempArray[wcell.row-1]).toFixed(2);
+      Cells.update(wcell._id,{$set: {data: tempp}});
+    })
+    weightCursor.forEach(function (wcell) {
+      console.log(wcell.data);
+    })
+
+};
+
+
+
 /**
 initialize the sliders. Using package: rcy:nouislider
 **/
@@ -396,13 +502,13 @@ Template.sliderCell.onRendered (function () {
   var thiscell=this.data;
 
   // find responsively weight cell
-  var WCell=Cells.findOne({
-    projectID:thiscell.projectID,
-    row:thiscell.row,
-    column:1,
-    isReport:false,
-    userID:thiscell.userID
-  });
+  // var WCell=Cells.findOne({
+  //   projectID:thiscell.projectID,
+  //   row:thiscell.row,
+  //   column:1,
+  //   isReport:false,
+  //   userID:thiscell.userID
+  // });
    var slider=this.$(".sliderrr");
 
 
@@ -416,14 +522,19 @@ Template.sliderCell.onRendered (function () {
   }).on('slide', function (ev, val) {
 
     //change value of weight cells
-    Cells.update({_id:WCell._id}, {$set:{data:val}});
-    updateSliders(WCell._id);
+    //Cells.update({_id:thiscell._id}, {$set:{data: val}});
+    //updateSliders(WCell._id);
+    updateOtherWeight(thiscell._id,val);
   
-  }).on('change',function(ev,val){
+  }).on('update',function(ev,val){
     //change value of weight cells
-    Cells.update({_id:WCell._id}, {$set: {data: val}});
+    //slider.val(thiscell.data);
+   // Cells.update({_id:thiscell._id}, {$set: {data: val}});
+    updateOtherWeight(thiscell._id,val);
+    //updateSliders(WCell._id);
 
   })
+  ///////////////////////
 
 });
 
