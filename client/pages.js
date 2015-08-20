@@ -316,7 +316,7 @@ Template.cellshow.helpers({
     },
     
     /*
-    type: to switch class for report cells
+    type: to switch class for personal matrix cells
     */
     type: function(){
       if(this.row ===0){
@@ -329,6 +329,8 @@ Template.cellshow.helpers({
         return 'show col0'
       }else if(this.column===1){
         return 'show col1'
+      }else if(this.column===2){
+        return 'show col2'
       }else
       {
         return 'show';

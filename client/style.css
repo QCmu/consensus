@@ -85,9 +85,12 @@ a {
 .table-container{
 	margin-top: 87px;
 	margin-left: 113px;
+	/*width: 100%;*/
+/*	overflow: auto;*/
 }
 .table-container table{
 	table-layout:fixed;
+
 }
 .table-null{
 	width: 220px;
@@ -151,6 +154,9 @@ a {
 }
 .col1{
 	width: 50px;
+}
+.col2{
+	min-width: 200px;
 }
 .show-notes{
 	float: right;
